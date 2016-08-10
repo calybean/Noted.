@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.youravgjoe.apps.noted" >
+    package="com.youravgjoe.apps.noted_ad_free" >
 
     <application
         android:allowBackup="true"
@@ -9,7 +9,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".MainActivity"
+            android:name="com.youravgjoe.apps.noted_ad_free.MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar" >
             <intent-filter>
@@ -19,15 +19,15 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".NoteActivity"
+            android:name="com.youravgjoe.apps.noted_ad_free.NoteActivity"
             android:label="@string/title_activity_note"
-            android:parentActivityName=".MainActivity"
+            android:parentActivityName="com.youravgjoe.apps.noted_ad_free.MainActivity"
             android:theme="@style/AppTheme.NoActionBar" >
 
             <!-- Parent activity meta-data to support 4.0 and lower -->
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainActivity" />
+                android:value="com.youravgjoe.apps.noted_ad_free.MainActivity" />
         </activity>
     </application>
 

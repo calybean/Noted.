@@ -1,4 +1,4 @@
-package com.youravgjoe.apps.noted;
+package com.youravgjoe.apps.noted_ad_free;
 
 import org.junit.Test;
 

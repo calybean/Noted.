@@ -5,7 +5,7 @@ android {
     buildToolsVersion "23.0.0"
 
     defaultConfig {
-        applicationId "com.youravgjoe.apps.noted"
+        applicationId "com.youravgjoe.apps.noted_ad_free"
         minSdkVersion 15
         targetSdkVersion 23
         versionCode 1
