@@ -150,9 +150,6 @@ public class NoteActivity extends AppCompatActivity {
             }
         }
 
-        Intent noteIntent = new Intent(NoteActivity.this, MainActivity.class);
-        NoteActivity.this.startActivity(noteIntent);
-
         super.onBackPressed();
     }
 
