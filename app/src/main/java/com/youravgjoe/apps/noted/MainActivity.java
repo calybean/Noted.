@@ -15,8 +15,15 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
+
 import java.util.ArrayList;
 import java.util.List;
+
+// App ID: ca-app-pub-3907281190046185~7869725758
+// Ad Unit ID: ca-app-pub-3907281190046185/4776658555
 
 public class MainActivity extends AppCompatActivity {
 
@@ -43,6 +50,11 @@ public class MainActivity extends AppCompatActivity {
         mAddFab = (FloatingActionButton) findViewById(R.id.addFab);
         mLongClicked = false;
 
+        MobileAds.initialize(getApplicationContext(), getResources().getString(R.string.app_id_ads));
+        AdView mAdView = (AdView) findViewById(R.id.adView);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        mAdView.loadAd(adRequest);
+
         populateNoteList();
 
         mAddFab.setOnClickListener(new View.OnClickListener() {
@@ -65,25 +77,26 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        if (!mLongClicked) {
-            mNoteListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-                @Override
-                public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-
-                    mAddFab.setImageDrawable(getResources().getDrawable(android.R.drawable.ic_menu_delete));
-
-                    return false;
-                }
-            });
-        } else {
-            mAddFab.setImageDrawable(getResources().getDrawable(R.drawable.fab_bg_normal));
-        }
+//        mNoteListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+//            @Override
+//            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+//                if (!mLongClicked) {
+//                    mLongClicked = true;
+//                    mAddFab.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_white_24dp));
+//                } else {
+//                    mLongClicked = false;
+//                    mAddFab.setImageDrawable(getResources().getDrawable(R.drawable.ic_add_white_24dp));
+//                }
+//                return true;
+//            }
+//        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
+        // clear the list and add them all again, in case we deleted one from the note activity
         mNoteList.clear();
         mNoteList = mDbHandler.getAllNotes();
 
@@ -92,13 +105,17 @@ public class MainActivity extends AppCompatActivity {
 
     public void populateNoteList() {
         List<String> noteTitleList = new ArrayList<>();
-        List<String> noteContentList = new ArrayList<>();
+        List<String> noteContentList = new ArrayList<>(); // this won't be used until I implement a two line list item
         for (Note note : mNoteList) {
-            noteTitleList.add(note.getTitle());
+            if(note.getTitle().length() < 36) { // this would be better if it weren't hard coded
+                noteTitleList.add(note.getTitle());
+            } else {
+                noteTitleList.add(note.getTitle().substring(0, 35) + "...");
+            }
             noteContentList.add(note.getContent());
         }
 
-        mNoteListAdapter = new ArrayAdapter<>(getBaseContext(), R.layout.content_main, R.id.noteTextView, noteTitleList);
+        mNoteListAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, noteTitleList);
         mNoteListView.setAdapter(mNoteListAdapter);
     }
 
@@ -110,7 +127,6 @@ public class MainActivity extends AppCompatActivity {
         private static final String KEY_ID = "id";
         private static final String KEY_TITLE = "title";
         private static final String KEY_CONTENT = "content";
-
 
         public DBHandler(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -125,9 +141,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            // Drop older table if existed
+            // Drop older table if it existed
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_NOTES);
-            // Creating tables again
+            // Create new table
             onCreate(db);
         }
 

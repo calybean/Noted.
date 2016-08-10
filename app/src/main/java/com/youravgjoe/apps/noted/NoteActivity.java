@@ -2,24 +2,28 @@ package com.youravgjoe.apps.noted;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.support.v7.app.ActionBar;
-import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class NoteActivity extends AppCompatActivity {
-
 
     EditText titleEditText;
     EditText contentEditText;
@@ -55,12 +59,28 @@ public class NoteActivity extends AppCompatActivity {
             // populate the edit texts with title and content
             titleEditText.setText(mNote.getTitle());
             contentEditText.setText(mNote.getContent());
+
+            // set cursor to end of title
+            titleEditText.setSelection(titleEditText.getText().length());
         } else {
             // if it doesn't exist, create a blank note
             mId = mDbHandler.getNotesCount();
             mNote = new Note(mId);
             mNoteIsAlreadyInDb = false;
         }
+
+        // show soft keyboard when activity is loaded
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        // hide soft keyboard
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
     }
 
     public boolean onCreateOptionsMenu(Menu menu)
@@ -78,27 +98,56 @@ public class NoteActivity extends AppCompatActivity {
                 onBackPressed();
                 return true;
             case R.id.action_delete:
-                // for later: make an alert "ARE YOU SURE?" dialog
+                // check to make sure the title and content aren't both empty
+                if(!(TextUtils.equals(mNote.getTitle(), null) && TextUtils.equals(mNote.getContent(), null))) {
+                    Log.d("joey", mNote.getTitle() + " " + mNote.getContent());
+                    // for later: make an alert "ARE YOU SURE?" dialog
+                    AlertDialog.Builder alert = new AlertDialog.Builder(this);
+                    alert.setMessage("Are you sure you want to delete this note?");
+                    alert.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    mDbHandler.deleteNote(mNote);
+                                    finish();
+                                }
+                            });
+                    alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // do nothing?
+                                }
+                            });
+                    alert.show();
 
-                mDbHandler.deleteNote(mNote);
-                finish();
-
+                    // hide soft keyboard for aesthetic purposes.
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+                } else {
+                    finish();
+                }
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
     public void onBackPressed() {
-
         mNote.setTitle(titleEditText.getText().toString());
         mNote.setContent(contentEditText.getText().toString());
 
         if(mNoteIsAlreadyInDb) {
-            // if the note is already in the db, update it
-            mDbHandler.updateNote(mNote);
+            // check to make sure the title and content aren't both empty
+            if(!(TextUtils.equals(mNote.getTitle(), "") && TextUtils.equals(mNote.getContent(), ""))) {
+                // if the note is already in the db, update it
+                mDbHandler.updateNote(mNote);
+            } else { // if it is empty, delete the note.
+                mDbHandler.deleteNote(mNote);
+            }
         } else {
-            // if the note is new, add it to the db
-            mDbHandler.addNote(mNote);
+            // check to make sure the title and content aren't both empty
+            if(!(TextUtils.equals(mNote.getTitle(), "") && TextUtils.equals(mNote.getContent(), ""))) {
+                // if the note is new, add it to the db
+                mDbHandler.addNote(mNote);
+            }
         }
 
         Intent noteIntent = new Intent(NoteActivity.this, MainActivity.class);

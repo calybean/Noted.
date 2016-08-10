@@ -1,6 +1,8 @@
 <resources>
-    <string name="app_name">Noted</string>
+    <string name="app_name">Noted.</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_note">Take a note:</string>
     <string name="action_delete">Delete</string>
+    <string name="app_id_ads">ca-app-pub-3907281190046185~7869725758</string>
+    <string name="banner_ad_unit_id">ca-app-pub-3907281190046185/4776658555</string>
 </resources>

@@ -1,7 +1,5 @@
 package com.youravgjoe.apps.noted;
 
-import android.util.Log;
-
 /**
  * Created by jcannon on 8/9/16.
  */
