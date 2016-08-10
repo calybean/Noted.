@@ -1,38 +1,33 @@
 package com.youravgjoe.apps.noted;
 
+import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import com.getbase.floatingactionbutton.AddFloatingActionButton;
-
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    List<String> noteTitleArray = new ArrayList<>();
-    List<String> noteContentArray = new ArrayList<>();
+    DBHandler mDbHandler;
 
-    String[] testArray = {"test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test"};
+    List<Note> mNoteList = new ArrayList<>();
 
-    ListView noteList;
-    ArrayAdapter<String> noteListAdapter;
-    AddFloatingActionButton addFab;
-
-    String titlePref;
-    String contentPref;
-    int newNotePosition;
-    String newNoteTitle;
-    String newNoteContent;
+    ListView mNoteListView;
+    ArrayAdapter<String> mNoteListAdapter;
+    FloatingActionButton mAddFab;
+    boolean mLongClicked;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,88 +36,181 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        noteList = (ListView) findViewById(R.id.noteListView);
-        addFab = (AddFloatingActionButton) findViewById(R.id.addFab);
+        mDbHandler = new DBHandler(this);
+        mNoteList = mDbHandler.getAllNotes();
 
+        mNoteListView = (ListView) findViewById(R.id.noteListView);
+        mAddFab = (FloatingActionButton) findViewById(R.id.addFab);
+        mLongClicked = false;
 
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            newNotePosition = extras.getInt("size");
-            newNoteTitle = extras.getString("title");
-            newNoteContent = extras.getString("content");
+        populateNoteList();
 
-            noteTitleArray.clear();
-            noteTitleArray.addAll(readPref(titlePref));
-            noteTitleArray.add(newNoteTitle); //add the new meal to the day's List of meals
-            writePref(titlePref, noteTitleArray);
-
-            noteContentArray.clear();
-            noteContentArray.addAll(readPref(contentPref));
-            noteContentArray.add(newNoteContent); //add the new meal to the day's List of meals
-            writePref(contentPref, noteContentArray); //output the updated list to the day's shared pref
-            if(noteTitleArray != null)
-            {
-                populateNoteList(); //repopulate the day's list of meals
-            }
-        }
-
-        addFab.setOnClickListener(new View.OnClickListener() {
+        mAddFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                noteTitleArray.add(noteTitleArray.size(), "Note " + noteTitleArray.size());
                 Intent noteIntent = new Intent(MainActivity.this, NoteActivity.class);
-                noteIntent.putExtra("title", noteTitleArray.get(noteTitleArray.size() - 1)); //pass the note name (note number, basically)
-                noteIntent.putExtra("size", noteTitleArray.size()); //pass the note list size, to be used as the note position
                 MainActivity.this.startActivity(noteIntent);
             }
         });
-    }
 
-    public void populateNoteList()
-    {
-        noteListAdapter = new ArrayAdapter<>(getBaseContext(), R.layout.content_main, R.id.noteTextView, noteTitleArray);
-        noteList.setAdapter(noteListAdapter);
+        mNoteListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-//        noteListAdapter = new ArrayAdapter<>(this, R.layout.content_main, R.id.noteTextView, testArray);
-//        noteList.setAdapter(noteListAdapter);
+                Note noteToOpen = mNoteList.get(position);
 
+                Intent noteIntent = new Intent(MainActivity.this, NoteActivity.class);
+                noteIntent.putExtra("id", noteToOpen.getId());
+                MainActivity.this.startActivity(noteIntent);
+            }
+        });
+
+        if (!mLongClicked) {
+            mNoteListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+                @Override
+                public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+
+                    mAddFab.setImageDrawable(getResources().getDrawable(android.R.drawable.ic_menu_delete));
+
+                    return false;
+                }
+            });
+        } else {
+            mAddFab.setImageDrawable(getResources().getDrawable(R.drawable.fab_bg_normal));
+        }
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
+    protected void onResume() {
+        super.onResume();
+
+        mNoteList.clear();
+        mNoteList = mDbHandler.getAllNotes();
+
+        populateNoteList();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+    public void populateNoteList() {
+        List<String> noteTitleList = new ArrayList<>();
+        List<String> noteContentList = new ArrayList<>();
+        for (Note note : mNoteList) {
+            noteTitleList.add(note.getTitle());
+            noteContentList.add(note.getContent());
         }
 
-        return super.onOptionsItemSelected(item);
+        mNoteListAdapter = new ArrayAdapter<>(getBaseContext(), R.layout.content_main, R.id.noteTextView, noteTitleList);
+        mNoteListView.setAdapter(mNoteListAdapter);
     }
 
-    public List<String> readPref(String prefName)
-    {
-        SharedPreferences sharedPreferences = getSharedPreferences(prefName, MODE_PRIVATE);
-        HashSet<String> hashSet = (HashSet<String>) sharedPreferences.getStringSet(prefName, new HashSet<String>());
-        return new ArrayList<>(hashSet);
-    }
+    public class DBHandler extends SQLiteOpenHelper {
 
-    public void writePref(String prefName, List<String> values)
-    {
-        HashSet<String> hashSet = new HashSet<>(values);
-        SharedPreferences sharedPreferences = getSharedPreferences(prefName, MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putStringSet(prefName, hashSet);
-        editor.apply();
+        private static final int DATABASE_VERSION = 1;
+        private static final String DATABASE_NAME = "notesInfo";
+        private static final String TABLE_NOTES = "notes";
+        private static final String KEY_ID = "id";
+        private static final String KEY_TITLE = "title";
+        private static final String KEY_CONTENT = "content";
+
+
+        public DBHandler(Context context) {
+            super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        }
+
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+            String CREATE_CONTACTS_TABLE = "CREATE TABLE " + TABLE_NOTES + "("
+                    + KEY_ID + " INTEGER PRIMARY KEY," + KEY_TITLE + " TEXT," + KEY_CONTENT + " TEXT" + ")";
+            db.execSQL(CREATE_CONTACTS_TABLE);
+        }
+
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            // Drop older table if existed
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NOTES);
+            // Creating tables again
+            onCreate(db);
+        }
+
+        // Add a note to the db
+        public void addNote(Note note) {
+            SQLiteDatabase db = this.getWritableDatabase();
+            ContentValues values = new ContentValues();
+            values.put(KEY_TITLE, note.getTitle());
+            values.put(KEY_CONTENT, note.getContent());
+
+            // Insert Row
+            db.insert(TABLE_NOTES, null, values);
+            db.close(); // Closing database connection
+        }
+
+        // Get a single note
+        public Note getNote(int id) {
+            SQLiteDatabase db = this.getReadableDatabase();
+            Cursor cursor = db.query(TABLE_NOTES, new String[] { KEY_ID, KEY_TITLE,
+                            KEY_CONTENT }, KEY_ID + "=?", new String[] { String.valueOf(id) },
+                    null, null, null, null);
+
+            if (cursor != null) {
+                cursor.moveToFirst();
+            }
+
+            Note note = new Note(Integer.parseInt(cursor.getString(0)), cursor.getString(1), cursor.getString(2));
+            cursor.close();
+            return note;
+        }
+
+        // Get all notes
+        public List<Note> getAllNotes() {
+            List<Note> noteList = new ArrayList<>();
+
+            // Select All Query
+            String selectQuery = "SELECT * FROM " + TABLE_NOTES;
+            SQLiteDatabase db = this.getWritableDatabase();
+            Cursor cursor = db.rawQuery(selectQuery, null);
+
+            // loop through all rows and add them to list
+            if (cursor.moveToFirst()) {
+                do {
+                    Note note = new Note();
+                    note.setId(Integer.parseInt(cursor.getString(0)));
+                    note.setTitle(cursor.getString(1));
+                    note.setContent(cursor.getString(2));
+
+                    // Add note to list
+                    noteList.add(note);
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+            return noteList;
+        }
+
+        // Get notes count
+        public int getNotesCount() {
+            String countQuery = "SELECT * FROM " + TABLE_NOTES;
+            SQLiteDatabase db = this.getReadableDatabase();
+            Cursor cursor = db.rawQuery(countQuery, null);
+            cursor.close();
+            return cursor.getCount();
+        }
+
+        // Update a note
+        public int updateNote(Note note) {
+            SQLiteDatabase db = this.getWritableDatabase();
+            ContentValues values = new ContentValues();
+            values.put(KEY_TITLE, note.getTitle());
+            values.put(KEY_CONTENT, note.getContent());
+
+            // updating row
+            return db.update(TABLE_NOTES, values, KEY_ID + " = ?",
+                    new String[]{String.valueOf(note.getId())});
+        }
+
+        // Delete a note
+        public void deleteNote(Note note) {
+            SQLiteDatabase db = this.getWritableDatabase();
+            db.delete(TABLE_NOTES, KEY_ID + " = ?",
+                    new String[] { String.valueOf(note.getId()) });
+            db.close();
+        }
     }
 }
