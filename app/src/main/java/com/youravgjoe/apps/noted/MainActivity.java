@@ -15,15 +15,8 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdView;
-import com.google.android.gms.ads.MobileAds;
-
 import java.util.ArrayList;
 import java.util.List;
-
-// App ID: ca-app-pub-3907281190046185~7869725758
-// Ad Unit ID: ca-app-pub-3907281190046185/4776658555
 
 public class MainActivity extends AppCompatActivity {
 
@@ -49,11 +42,6 @@ public class MainActivity extends AppCompatActivity {
         mNoteListView = (ListView) findViewById(R.id.noteListView);
         mAddFab = (FloatingActionButton) findViewById(R.id.addFab);
         mLongClicked = false;
-
-        MobileAds.initialize(getApplicationContext(), getResources().getString(R.string.app_id_ads));
-        AdView mAdView = (AdView) findViewById(R.id.adView);
-        AdRequest adRequest = new AdRequest.Builder().build();
-        mAdView.loadAd(adRequest);
 
         populateNoteList();
 
